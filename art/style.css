@@ -1,0 +1,67 @@
+body {
+  background-color: #aaa294;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.container img {
+  max-width: calc(100% - 10px);
+  height: auto;
+  flex-grow: 1;
+  margin: 5px;
+}
+
+/* Two columns for larger smartphones */
+@media (min-width: 480px) {
+  .container img {
+    max-width: calc(50% - 10px);
+  }
+}
+
+/* Three columns for tablets */
+@media (min-width: 768px) {
+  .container img {
+    max-width: calc(33.33% - 10px);
+  }
+}
+
+/* Four columns for small desktops */
+@media (min-width: 1024px) {
+  .container img {
+    max-width: calc(25% - 10px);
+  }
+}
+
+/* Five columns */
+@media (min-width: 1200px) {
+  .container img {
+    max-width: calc(20% - 10px);
+  }
+}
+
+/* Six columns */
+@media (min-width: 1400px) {
+  .container img {
+    max-width: calc(16.66% - 10px);
+  }
+}
+
+/* Seven columns */
+@media (min-width: 1600px) {
+  .container img {
+    max-width: calc(14.28% - 10px);
+  }
+}
+
+/* Eight columns for wide-screen monitors */
+@media (min-width: 1920px) {
+  .container img {
+    max-width: calc(12.5% - 10px);
+  }
+}

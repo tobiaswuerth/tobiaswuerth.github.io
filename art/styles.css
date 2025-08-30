@@ -1,0 +1,144 @@
+:root {
+    --bg: #e6e6db;
+    --text: #111;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --card: #fff;
+    --radius: 6px;
+    --gap: 8px;
+    --cols: 4;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(#fff, rgba(255, 255, 255, .92));
+    backdrop-filter: saturate(1.2) blur(6px);
+    border-bottom: 1px solid var(--border);
+}
+
+.container {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.title {
+    font-weight: 600;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.controls input {
+    width: 120px;
+}
+
+main {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    gap: var(--gap);
+    container-type: inline-size;
+}
+
+.figure {
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--card);
+    position: relative;
+}
+
+.figure picture,
+.figure img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1/1;
+}
+
+.figure img {
+    height: 100%;
+    object-fit: cover;
+    transition: filter 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+}
+
+.img-lqip {
+    filter: blur(4px);
+    transform: scale(1.02);
+    opacity: 0.9;
+}
+
+.img-loaded {
+    filter: blur(0);
+    transform: none;
+    opacity: 1;
+}
+
+.img-error {
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--text);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    opacity: 0.7;
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.error-message {
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    border: 1px solid #fecaca;
+    margin: 16px 0;
+}

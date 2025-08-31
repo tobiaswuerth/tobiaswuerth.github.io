@@ -5,12 +5,15 @@ body {
     overflow: hidden;
     background: #e6e6db;
     font-family: system-ui, -apple-system, sans-serif;
+    touch-action: none; /* prevent browser pinch/drag gestures */
+    overscroll-behavior: none; /* avoid pull-to-refresh and scrolling */
 }
 
 #app {
     width: 100vw;
     height: 100vh;
     position: relative;
+    touch-action: none; /* ensure gestures reach PIXI */
 }
 
 #loading {

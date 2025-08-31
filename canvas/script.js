@@ -1,7 +1,7 @@
 const CONFIG = {
     COORDS_URL: "data.json",
     BASE_SPRITE_SIZE: 25,
-    ZOOM_SENSITIVITY: 0.001,
+    ZOOM_SENSITIVITY: 0.01,
     MIN_ZOOM: 0.25,
     MAX_ZOOM: 100,
     WORLD_PADDING: 100,
@@ -26,6 +26,8 @@ class UMAPGallery {
         this.worldWidth = 0;
         this.worldHeight = 0;
         this.grid = null;
+        this.pointerStartPos = null;
+        this.pointerStartTime = 0;
     }
 
     async init() {
@@ -50,7 +52,18 @@ class UMAPGallery {
             powerPreference: "high-performance",
             hello: false
         });
-        document.getElementById('app').appendChild(this.app.view);
+        const container = document.getElementById('app');
+        container.appendChild(this.app.view);
+        
+        // Ensure the canvas doesn't allow the browser to handle native gestures
+        this.app.view.style.touchAction = 'none';
+        this.app.view.style.msTouchAction = 'none';
+        this.app.view.style.webkitUserSelect = 'none';
+        this.app.view.style.userSelect = 'none';
+        
+        // Prevent context menu on long press which can interfere with gestures
+        this.app.view.addEventListener('contextmenu', (e) => e.preventDefault());
+        
         window.addEventListener('resize', () => this.handleResize());
     }
 
@@ -94,25 +107,96 @@ class UMAPGallery {
             screenHeight: window.innerHeight,
             worldWidth: this.worldWidth,
             worldHeight: this.worldHeight,
-            events: this.app.renderer.events
+            events: this.app.renderer.events,
+            passiveWheel: false,
+            stopPropagation: false,
+            preventDefault: true
         });
 
         this.app.stage.addChild(this.viewport);
 
+        // Enable common navigation plugins with safer settings
         this.viewport
-            .drag()
-            .pinch()
-            .wheel({ smooth: 10, percent: CONFIG.ZOOM_SENSITIVITY })
-            .decelerate();
+            // keep drag responsive, but we'll disable it during pinch to avoid conflicts
+            .drag({ 
+                pressDrag: true,
+                factor: 1,
+                mouseButtons: 'all'
+            })
+            // enable panning during pinch for natural mobile UX
+            .pinch({ 
+                noDrag: false, // Allow panning during pinch
+                percent: 1.5, // Increased sensitivity for more responsive zoom
+                factor: 1, // Higher factor for snappier response
+                center: null, // Use gesture center
+                interrupt: false, // Don't interrupt ongoing pinch for smoother transitions
+                threshold: 1 // Lower threshold for quicker gesture recognition
+            })
+            // reduce smoothing to avoid overshoot; support trackpad pinch
+            .wheel({ 
+                smooth: 3, // Reduced smoothing for snappier response
+                percent: CONFIG.ZOOM_SENSITIVITY, 
+                trackpadPinch: true,
+                reverse: false, // Ensure consistent zoom direction
+                center: null // Zoom towards cursor position
+            })
+            // gentle deceleration for pan only (we'll pause it while pinching)
+            .decelerate({ 
+                friction: 0.95,
+                bounce: 0.8,
+                minSpeed: 0.01
+            });
 
+        // Clamp movement to world bounds to prevent flying off into empty space
+        this.viewport.clamp({ direction: 'all' });
+
+        // Ensure min zoom does not exceed the initial fit scale to avoid sudden jumps
+        const fitScaleX = this.viewport.screenWidth / this.worldWidth;
+        const fitScaleY = this.viewport.screenHeight / this.worldHeight;
+        const fitScale = Math.min(fitScaleX, fitScaleY);
         this.viewport.clampZoom({
-            minScale: CONFIG.MIN_ZOOM,
+            minScale: Math.min(CONFIG.MIN_ZOOM, fitScale * 0.5),
             maxScale: CONFIG.MAX_ZOOM,
         });
 
         this.viewport.fit();
         this.viewport.moveCenter(this.worldWidth / 2, this.worldHeight / 2);
         this.viewport.on('moved', () => this.update());
+
+        // Avoid decelerate momentum interfering with pinch zooming
+        this.viewport.on('pinch-start', () => {
+            this.viewport.plugins.pause('decelerate');
+        });
+        this.viewport.on('pinch-end', () => {
+            this.viewport.plugins.resume('decelerate');
+        });
+
+        // Handle all pointer events at viewport level for reliable interaction
+        this.viewport.eventMode = 'static';
+        
+        this.viewport.on('pointerdown', (e) => {
+            this.pointerStartPos = { x: e.global.x, y: e.global.y };
+            this.pointerStartTime = Date.now();
+        });
+        
+        this.viewport.on('pointerup', (e) => {
+            // Check if this was a click (short duration, minimal movement)
+            if (this.pointerStartPos && this.pointerStartTime) {
+                const timeDiff = Date.now() - this.pointerStartTime;
+                const distance = Math.sqrt(
+                    Math.pow(e.global.x - this.pointerStartPos.x, 2) + 
+                    Math.pow(e.global.y - this.pointerStartPos.y, 2)
+                );
+                
+                // If it's a quick tap with minimal movement, check for sprite hit
+                if (timeDiff < 200 && distance < 15) {
+                    this.handleClick(e.global);
+                }
+            }
+            
+            this.pointerStartPos = null;
+            this.pointerStartTime = 0;
+        });
     }
 
     createGrid() {
@@ -166,31 +250,36 @@ class UMAPGallery {
             sprite.height = CONFIG.BASE_SPRITE_SIZE;
             sprite.x = item.x;
             sprite.y = item.y;
-            sprite.eventMode = 'static';
-            sprite.cursor = 'pointer';
+            sprite.eventMode = 'none'; // Always non-interactive - viewport handles everything
+            sprite.name = item.name;
 
-            let pointerStartPos = null;
-            const dragThreshold = 5; // pixels
-
-            sprite.on('pointerdown', (e) => {
-                pointerStartPos = { x: e.global.x, y: e.global.y };
-            });
-
-            sprite.on('pointertap', (e) => {
-                if (pointerStartPos) {
-                    const deltaX = Math.abs(e.global.x - pointerStartPos.x);
-                    const deltaY = Math.abs(e.global.y - pointerStartPos.y);
-                    const wasDrag = deltaX > dragThreshold || deltaY > dragThreshold;
-
-                    if (!wasDrag) {
-                        const imageUrl = nameToImagePath(item.name, 2048, "jpg");
-                        window.open(imageUrl, '_blank');
-                    }
-                }
-            });
             this.viewport.addChild(sprite);
             this.sprites.set(item.name, sprite);
         });
+    }
+
+    handleClick(globalPos) {
+        // Convert global position to viewport local position
+        const localPos = this.viewport.toLocal(globalPos);
+        
+        console.log('Click detected at:', localPos.x, localPos.y);
+        
+        // Find sprite at this position
+        for (const [name, sprite] of this.sprites.entries()) {
+            if (!sprite.visible) continue;
+            
+            // Check if click is within sprite bounds (sprites are anchored at center)
+            const halfWidth = sprite.width / 2;
+            const halfHeight = sprite.height / 2;
+            
+            if (localPos.x >= sprite.x - halfWidth && localPos.x <= sprite.x + halfWidth &&
+                localPos.y >= sprite.y - halfHeight && localPos.y <= sprite.y + halfHeight) {
+                console.log('Hit sprite:', name);
+                const imageUrl = nameToImagePath(name, 2048, "jpg");
+                window.open(imageUrl, '_blank');
+                break; // Only open the first hit
+            }
+        }
     }
 
     update() {

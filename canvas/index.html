@@ -3,9 +3,8 @@
 
 <head>
     <meta charset="utf-8" />
+    <title>Image Gallery Canvas • Tobias Würth</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
-    <title>Image Gallery • Tobias Würth</title>
     <link rel="preload" href="styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
         <link rel="stylesheet" href="styles.css">
@@ -18,23 +17,21 @@
             <a href="/" title="Home" style="margin-right: 5px">
                 <img width="38" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAC9klEQVR4AeyYS6hNURjHr0cekUcpZaAoRKGYYGCAyEAUJowwYcbAK4ohec2YyMAjlJAQKW9GlKIkE8RAZqJQuvf3X511O+fcu/bZa+/vnL13ndv/t9fea6/1re+/19rnrnOG9lT8r2ug6AlsxwwMw9Q2eAm/aryg3AK6R2EnawPjSO0unIXFMKbGEspzcAfUhsJGlgYmktJ9WAkhreLGQ5gEJrIyMJlsHsMiaKWFNHgKUyC3LAxMJYtnMA/SajYNn8N0yKW8BqYx+iOYAbHyfWfGdqxvn8fAHALlfYqaPS2n+cTKpKwGtI6fMKLFOvbvjz61CBmnLAaWMoTpJwnxJsADWAFRijWwmuj3wPSznHiS/mfc5mQdpFaMgbVEvQGjoV0aSeCrsBFSKa2BzUS7BhqAoq0aQfTLsBVaKo2BHUQ5D8OhU9KeSduRXa0GbGVgLwFOQ6t2NDHXECKehCMQVFJih+mV2Jn7nZAeYjCPwQzI+SkyOwRlkUycIZkB+TZX+LW3k8Zl03YSugAN72K9Ab39V2iQ6u2nXRHaxKDXYRQ4eQNaNpeo2QABlaZ6DZlcBOXc4w0sp6IKyZOm03qOy6DfgDZnuq4SC5Ssn4HPuqgYX5SvN3CTi49QFX0gUeXcv4T+UKE1pTf8J+dllXLTnkzv7F8l6WdA51856OUYT+necMos+kSn3TAXxtbQ9+U9nOdZqspJuWmn+o1YTvUGXEWOQy99j8IsOA7v4HeNt5THQPdUcmojSwN66vtI6x+EpGnXTIhQm6h6KwP6onMiYmTNwq2I9sGmFga0dPYHRwjf0Gypb7hFijsWBl4zjj7WKKL0ntZvIJesDGRN4lXWjr6fhYEfPliG8nuGPg1dLAz8b4gYd5GnrxvJwoALVNSha6CoJ+/H7c6AfxJFld0ZGPTJd7AyaQaSdpUdTNENpV2sO2k+JBnQnr4MJpSDcmnO3V0nGThAC/2crm9CSeg3VJpmkvomxdY95XAwFD3JQKhPqeorb6APAAD//1GoQzkAAAAGSURBVAMAu3ldYRKRg/0AAAAASUVORK5CYII=">
             </a>
-            <div style="flex-grow: 1;">
-                <div class="title">Gallery</div>
+            <div>
+                <div class="title">Canvas</div>
                 <div class="subtitle">Tobias Würth</div>
-            </div>
-            <div class="controls" aria-label="Layout controls">
-                <label for="cols">Columns</label>
-                <input id="cols" type="range" min="1" max="10" step="1" value="4" />
-                <span id="colsOut">4</span>
             </div>
         </div>
     </header>
+    <div id="app">
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            <div>Loading...</div>
+        </div>
+    </div>
 
-    <main>
-        <h4 id="loading">Loading gallery...</h4>
-        <div id="grid" class="grid" aria-live="polite"></div>
-    </main>
-
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.3/dist/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-viewport@5.1.0/dist/viewport.min.js"></script>
     <script src="script.js"></script>
 </body>
 

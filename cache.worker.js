@@ -14,6 +14,8 @@ const CACHE_URL_FORMATS = [
   'favicon-32x32.png',
   'favicon.ico',
   'plutchik-wheel_de.png',
+  '2d-tutorial.webm',
+  '2d-tutorial-alt.png',
 ]
 
 self.addEventListener('install', (event) => {

@@ -1,4 +1,4 @@
-import{B as C,b as f,e as u,y as S,z as I,A as R,d as T,C as A,g as D,o as E,a as F,r as H,c as _,f as i,i as P,t as c,F as U,j,D as M,w as g,s as N,l as q,E as L,q as O,_ as Y}from"./main-DGXOq_dG.js";import{u as K}from"./useClipboard-COc5nFPe.js";var G=`
+import{B as C,b as f,e as u,y as S,z as I,A as R,d as T,C as A,g as D,o as E,a as F,r as H,c as _,f as i,i as P,t as c,F as U,j,D as M,w as g,s as N,l as q,E as L,q as O,_ as Y}from"./main-YTI8vnuI.js";import{u as K}from"./useClipboard-BIDXZR_b.js";var G=`
     .p-textarea {
         font-family: inherit;
         font-feature-settings: inherit;

@@ -16,6 +16,11 @@ const CACHE_URL_FORMATS = [
   'plutchik-wheel_de.png',
   '2d-tutorial.webm',
   '2d-tutorial-alt.png',
+  'pixi.min.js',
+  'viewport.min.js',
+  'huggingface_transformers.js',
+  'ort-wasm-simd-threaded.jsep.mjs',
+  'ort-wasm-simd-threaded.jsep.wasm',
 ]
 
 self.addEventListener('install', (event) => {
@@ -81,12 +86,13 @@ async function fetchAndCache(request) {
 }
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') {
+    console.debug('██ Cache ignores', event.request.method, event.request.url)
+    return
+  }
+
   const url = new URL(event.request.url)
-  if (
-    event.request.method !== 'GET' ||
-    url.origin !== self.location.origin ||
-    !CACHE_URL_FORMATS.some((format) => url.pathname.includes(format))
-  ) {
+  if (!CACHE_URL_FORMATS.some((format) => url.pathname.endsWith(format))) {
     console.debug('██ Cache ignores', event.request.method, event.request.url)
     return
   }

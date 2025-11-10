@@ -18,9 +18,8 @@ const CACHE_URL_FORMATS = [
   '2d-tutorial-alt.png',
   'pixi.min.js',
   'viewport.min.js',
-  'huggingface_transformers.js',
-  'ort-wasm-simd-threaded.jsep.mjs',
-  'ort-wasm-simd-threaded.jsep.wasm',
+  'yolo11s-seg.onnx',
+  'yolo11s-seg.json',
 ]
 
 self.addEventListener('install', (event) => {

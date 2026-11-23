@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Page Not Found</title>
     <script>
-      sessionStorage.redirect = location.href
+      // Keep the requested address for index.html, which restores it after the redirect below.
+      try {
+        sessionStorage.redirect = location.href
+      } catch {
+        // Storage blocked: the visitor lands on the home page instead.
+      }
     </script>
     <meta http-equiv="refresh" content="0;URL='/'" />
   </head>

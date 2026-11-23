@@ -1,7 +1,7 @@
 {
-  "name": "Artwork Gallery",
-  "short_name": "Artwork Gallery",
-  "description": "A digital space for showcasing creative expressions and artistic talent",
+  "name": "Tobias Würth",
+  "short_name": "Tobias Würth",
+  "description": "Tobias Würth's digital playground: artworks, writings, tools for self-reflection and AI experiments that run in the browser.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

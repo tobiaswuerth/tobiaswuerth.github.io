@@ -1,117 +1,77 @@
-const CACHE_NAME = 'my-app-cache-v1'
-const CACHE_TTL = 10 * 60 * 1000 // 10 minutes in milliseconds
+/*
+ * Service worker: keeps small site files that are needed on every visit.
+ *
+ * - Files that never change under their name (gallery thumbnails, icons) are served from the
+ *   cache first and fetched only once.
+ * - Lists that grow when artworks are added (gallery/images.txt, gallery2d.json) are served from
+ *   the cache at once and refreshed in the background for the next visit.
+ * - Everything else (app bundles, large images, model and index files) goes to the network; the
+ *   pages that need large files cache them themselves.
+ *
+ * Owner: this file. Lifecycle: on activation every cache not in KEEP_CACHES is deleted, so
+ * bumping CACHE_NAME drops the old site cache.
+ */
 
-const CACHES_TO_KEEP = [CACHE_NAME, 'transformers-cache', 'image-embeddings-cache-v1']
-const CACHE_URL_FORMATS = [
-  '-lqip.jpg',
-  '-128.avif',
-  'gallery/images.txt',
-  'gallery2d.json',
-  'android-chrome-192x192.png',
-  'android-chrome-512x512.png',
-  'apple-touch-icon.png',
-  'favicon-16x16.png',
-  'favicon-32x32.png',
-  'favicon.ico',
-  'plutchik-wheel_de.png',
-  '2d-tutorial.webm',
-  '2d-tutorial-alt.png',
-  'pixi.min.js',
-  'viewport.min.js',
-  'yolo11s-seg.onnx',
-  'yolo11s-seg.json',
+const CACHE_NAME = 'site-assets-v3'
+const KEEP_CACHES = [CACHE_NAME, 'transformers-cache', 'image-search-index-v1', 'yolo-model-v1']
+
+const CACHE_FIRST = [
+  /^\/gallery\/[\w-]+\/[\w-]+-(lqip\.jpg|128\.avif)$/,
+  /^\/(favicon\.ico|favicon-\d+x\d+\.png|android-chrome-\d+x\d+\.png|apple-touch-icon\.png)$/,
 ]
+const REFRESH_IN_BACKGROUND = [/^\/gallery\/images\.txt$/, /^\/gallery2d\.json$/]
 
-self.addEventListener('install', (event) => {
-  console.log('Service worker installing.')
+function strategyFor(request) {
+  if (request.method !== 'GET') return null
+  const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return null
+  if (CACHE_FIRST.some((pattern) => pattern.test(url.pathname))) return 'cache-first'
+  if (REFRESH_IN_BACKGROUND.some((pattern) => pattern.test(url.pathname))) return 'refresh'
+  return null
+}
+
+/** Fetches from the network and stores complete (200) responses. */
+async function fetchAndStore(request) {
+  const response = await fetch(request)
+  if (response.status === 200) {
+    const cache = await caches.open(CACHE_NAME)
+    await cache.put(request, response.clone())
+  }
+  return response
+}
+
+async function cacheFirst(request) {
+  return (await caches.match(request)) ?? fetchAndStore(request)
+}
+
+async function serveAndRefresh(event) {
+  const cached = await caches.match(event.request)
+  const refreshed = fetchAndStore(event.request)
+  if (!cached) return refreshed
+  event.waitUntil(
+    refreshed.catch((error) => console.warn('Background refresh failed', event.request.url, error)),
+  )
+  return cached
+}
+
+self.addEventListener('install', () => {
   self.skipWaiting()
-  event.waitUntil(caches.open(CACHE_NAME).catch(console.error))
 })
 
 self.addEventListener('activate', (event) => {
-  console.log('Service worker activating.')
-  self.clients.claim()
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (!CACHES_TO_KEEP.includes(cacheName)) {
-            console.warn('Deleting old cache:', cacheName)
-            return caches.delete(cacheName)
-          }
-        }),
+    (async () => {
+      const names = await caches.keys()
+      await Promise.all(
+        names.filter((name) => !KEEP_CACHES.includes(name)).map((name) => caches.delete(name)),
       )
-    }),
+      await self.clients.claim()
+    })(),
   )
 })
 
-async function putWithTimestamp(cache, request, response) {
-  const timestamp = Date.now()
-  // Copy existing headers to preserve Content-Type and other metadata
-  const headers = new Headers(response.headers)
-  headers.set('cache-timestamp', timestamp.toString())
-
-  // Create a new Response from the original body (as ArrayBuffer) so we can attach our headers
-  const body = await response.clone().arrayBuffer()
-  const responseWithTimestamp = new Response(body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  })
-
-  await cache.put(request, responseWithTimestamp)
-}
-
-function isCacheValid(cachedResponse) {
-  const timestamp = cachedResponse.headers.get('cache-timestamp')
-  if (!timestamp) {
-    return false
-  }
-  const age = Date.now() - parseInt(timestamp)
-  return age < CACHE_TTL
-}
-
-async function fetchAndCache(request) {
-  const networkResponse = await fetch(request)
-  if (!networkResponse || networkResponse.status !== 200) {
-    return networkResponse
-  }
-
-  const cacheClone = networkResponse.clone()
-  caches.open(CACHE_NAME).then((cache) => {
-    putWithTimestamp(cache, request, cacheClone).catch(console.error)
-  })
-  return networkResponse
-}
-
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') {
-    console.debug('██ Cache ignores', event.request.method, event.request.url)
-    return
-  }
-
-  const url = new URL(event.request.url)
-  if (!CACHE_URL_FORMATS.some((format) => url.pathname.endsWith(format))) {
-    console.debug('██ Cache ignores', event.request.method, event.request.url)
-    return
-  }
-
-  event.respondWith(
-    (async () => {
-      const cachedResponse = await caches.match(event.request)
-      if (!cachedResponse) {
-        console.debug('██ NO Cache found, fetch online', event.request.url)
-        return fetchAndCache(event.request)
-      }
-
-      if (!isCacheValid(cachedResponse)) {
-        console.debug('▒▒ Cache expired, use cache and refresh afterwards', event.request.url)
-        fetchAndCache(event.request).catch(console.error)
-        return cachedResponse
-      }
-
-      console.debug('░░ OK cached', event.request.url)
-      return cachedResponse
-    })(),
-  )
+  const strategy = strategyFor(event.request)
+  if (strategy === 'cache-first') event.respondWith(cacheFirst(event.request))
+  else if (strategy === 'refresh') event.respondWith(serveAndRefresh(event))
 })

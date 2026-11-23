@@ -11,15 +11,48 @@
     <link rel="manifest" href="/site.webmanifest" />
 
     <title>Tobias Würth 🧙‍♂️✨</title>
-    <script type="module" crossorigin src="/assets/main-CMcPNRHD.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/main-Cvl4xybX.css">
+    <meta
+      name="description"
+      content="Tobias Würth's digital playground: artworks, writings, tools for self-reflection and AI experiments that run in the browser."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tobias Würth" />
+    <meta property="og:title" content="Tobias Würth" />
+    <meta
+      property="og:description"
+      content="Tobias Würth's digital playground: artworks, writings, tools for self-reflection and AI experiments that run in the browser."
+    />
+    <meta property="og:url" content="https://tobiaswuerth.github.io/" />
+    <meta property="og:image" content="https://tobiaswuerth.github.io/android-chrome-512x512.png" />
+    <meta name="twitter:card" content="summary" />
+    <script>
+      // Apply the saved or system colour theme before the first paint (no light flash in dark mode).
+      ;(() => {
+        let saved = null
+        try {
+          saved = localStorage.getItem('theme-preference')
+        } catch {
+          // Storage blocked (e.g. strict privacy mode): follow the system theme.
+        }
+        const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+      })()
+    </script>
+    <script type="module" crossorigin src="/assets/main-BFhq0J0l.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-1D5g6PN9.css">
   </head>
   <body>
     <div id="app"></div>
     <script>
+      // Return to the address 404.html was asked for (GitHub Pages serves it for deep links).
       ;(() => {
-        const redirect = sessionStorage.redirect
-        delete sessionStorage.redirect
+        let redirect = null
+        try {
+          redirect = sessionStorage.redirect
+          delete sessionStorage.redirect
+        } catch {
+          // Storage blocked: 404.html could not keep the address, so the home page stays.
+        }
         if (redirect && redirect !== location.href) {
           history.replaceState(null, null, redirect)
         }
